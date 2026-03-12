@@ -1,21 +1,56 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type RecorderState = "idle" | "recording" | "stopped";
 
+const VIDEO_MIME_CANDIDATES = [
+  "video/webm;codecs=vp9,opus",
+  "video/webm;codecs=vp8,opus",
+  "video/webm"
+];
+
+function getSupportedVideoMimeType() {
+  if (typeof MediaRecorder === "undefined") {
+    return "video/webm";
+  }
+
+  return (
+    VIDEO_MIME_CANDIDATES.find((type) => MediaRecorder.isTypeSupported(type)) ??
+    "video/webm"
+  );
+}
+
 export default function Home() {
   const [state, setState] = useState<RecorderState>("idle");
-  const [error, setError] = useState<string>("");
+  const [error, setError] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [savedPath, setSavedPath] = useState<string>("");
+  const [savedPath, setSavedPath] = useState("");
   const [videoBlob, setVideoBlob] = useState<Blob | null>(null);
 
   const streamRef = useRef<MediaStream | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const liveVideoRef = useRef<HTMLVideoElement | null>(null);
+
+  const stopTracks = useCallback(() => {
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+    streamRef.current = null;
+
+    if (liveVideoRef.current) {
+      liveVideoRef.current.srcObject = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (recorderRef.current && recorderRef.current.state !== "inactive") {
+        recorderRef.current.stop();
+      }
+      stopTracks();
+    };
+  }, [stopTracks]);
 
   const previewUrl = useMemo(() => {
     if (!videoBlob) {
@@ -30,19 +65,18 @@ export default function Home() {
       if (previewUrl) {
         URL.revokeObjectURL(previewUrl);
       }
-      stopTracks();
     };
   }, [previewUrl]);
 
-  const stopTracks = () => {
-    streamRef.current?.getTracks().forEach((track) => track.stop());
-    streamRef.current = null;
-  };
-
-  const startRecording = async () => {
+  const startRecording = useCallback(async () => {
     setError("");
     setSavedPath("");
     setVideoBlob(null);
+
+    if (recorderRef.current && recorderRef.current.state !== "inactive") {
+      recorderRef.current.stop();
+    }
+    stopTracks();
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -55,21 +89,21 @@ export default function Home() {
         liveVideoRef.current.srcObject = stream;
       }
 
-      const recorder = new MediaRecorder(stream, {
-        mimeType: "video/webm"
-      });
+      const mimeType = getSupportedVideoMimeType();
+      const recorder = new MediaRecorder(stream, { mimeType });
 
       chunksRef.current = [];
-      recorder.ondataavailable = (event) => {
+      recorder.ondataavailable = (event: BlobEvent) => {
         if (event.data.size > 0) {
           chunksRef.current.push(event.data);
         }
       };
 
       recorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: "video/webm" });
+        const blob = new Blob(chunksRef.current, { type: mimeType });
         setVideoBlob(blob);
         setState("stopped");
+        recorderRef.current = null;
         stopTracks();
       };
 
@@ -77,23 +111,23 @@ export default function Home() {
       recorder.start();
       setState("recording");
     } catch (err) {
-      const message =
+      setError(
         err instanceof Error
           ? err.message
-          : "Unable to access camera and microphone.";
-      setError(message);
+          : "Unable to access camera and microphone."
+      );
     }
-  };
+  }, [stopTracks]);
 
-  const stopRecording = () => {
-    if (!recorderRef.current || state !== "recording") {
+  const stopRecording = useCallback(() => {
+    if (!recorderRef.current || recorderRef.current.state === "inactive") {
       return;
     }
 
     recorderRef.current.stop();
-  };
+  }, []);
 
-  const uploadRecording = async () => {
+  const uploadRecording = useCallback(async () => {
     if (!videoBlob) {
       setError("Record a video before uploading.");
       return;
@@ -119,14 +153,13 @@ export default function Home() {
       const data = (await response.json()) as { path: string };
       setSavedPath(data.path);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Upload failed.";
-      setError(message);
+      setError(err instanceof Error ? err.message : "Upload failed.");
     } finally {
       setIsUploading(false);
     }
-  };
+  }, [videoBlob]);
 
-  const deleteRecording = async () => {
+  const deleteRecording = useCallback(async () => {
     setError("");
 
     try {
@@ -149,12 +182,14 @@ export default function Home() {
       setSavedPath("");
       setState("idle");
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Delete failed.";
-      setError(message);
+      setError(err instanceof Error ? err.message : "Delete failed.");
     } finally {
       setIsDeleting(false);
     }
-  };
+  }, [savedPath]);
+
+  const canSave = Boolean(videoBlob) && !isUploading;
+  const canDelete = (Boolean(videoBlob) || Boolean(savedPath)) && state !== "recording";
 
   return (
     <main className="scene min-h-screen px-4 py-10 md:px-10 md:py-14">
@@ -194,16 +229,14 @@ export default function Home() {
                 </button>
                 <button
                   onClick={uploadRecording}
-                  disabled={!videoBlob || isUploading}
+                  disabled={!canSave}
                   className="control control-save"
                 >
                   {isUploading ? "Saving..." : "Save"}
                 </button>
                 <button
                   onClick={deleteRecording}
-                  disabled={
-                    (!videoBlob && !savedPath) || state === "recording" || isDeleting
-                  }
+                  disabled={!canDelete || isDeleting}
                   className="control control-delete"
                 >
                   {isDeleting ? "Deleting..." : "Delete"}
