@@ -1,5 +1,195 @@
 @import "tailwindcss";
 
+:root {
+  --bg-a: #16110f;
+  --bg-b: #0d1d24;
+  --panel-a: #1a1412d9;
+  --panel-b: #0f232bd9;
+  --line: #ffffff26;
+  --ink: #f2ede7;
+  --muted: #cbbeb0;
+  --accent-1: #ffb347;
+  --accent-2: #3cd5c2;
+}
+
+* {
+  box-sizing: border-box;
+}
+
 body {
-  @apply bg-slate-950 text-slate-100 min-h-screen;
+  margin: 0;
+  min-height: 100vh;
+  color: var(--ink);
+  font-family: "Avenir Next", "Segoe UI", sans-serif;
+  background:
+    radial-gradient(circle at 10% 5%, #ffb34722, transparent 35%),
+    radial-gradient(circle at 90% 15%, #3cd5c21f, transparent 35%),
+    linear-gradient(140deg, var(--bg-a), var(--bg-b));
+}
+
+.scene {
+  position: relative;
+  overflow: hidden;
+}
+
+.grain {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.18;
+  background-image: radial-gradient(#ffffff30 0.7px, transparent 0.7px);
+  background-size: 4px 4px;
+  mix-blend-mode: soft-light;
+}
+
+.panel {
+  border: 1px solid var(--line);
+  border-radius: 1.2rem;
+  padding: 1.2rem;
+  backdrop-filter: blur(10px);
+  position: relative;
+  overflow: hidden;
+}
+
+.panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(120deg, #ffffff14, transparent 42%);
+}
+
+.panel-primary {
+  background: var(--panel-a);
+}
+
+.panel-secondary {
+  background: var(--panel-b);
+}
+
+.eyebrow {
+  font-family: "Courier New", monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.3em;
+  color: var(--accent-1);
+  margin: 0;
+  font-size: 0.74rem;
+}
+
+.headline {
+  font-family: "Didot", "Bodoni MT", "Times New Roman", serif;
+  font-size: clamp(2.5rem, 7vw, 5rem);
+  line-height: 0.9;
+  margin: 0.2rem 0 0;
+  letter-spacing: 0.02em;
+}
+
+.section-title {
+  margin: 0;
+  font-family: "Didot", "Bodoni MT", serif;
+  font-size: 1.4rem;
+}
+
+.video-frame {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 0.85rem;
+  background: #030303;
+  border: 1px solid #ffffff1f;
+}
+
+.chip {
+  font-family: "Courier New", monospace;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--muted);
+}
+
+.control {
+  border: 1px solid #000;
+  border-radius: 999px;
+  padding: 0.65rem 1.15rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  font-family: "Courier New", monospace;
+  font-weight: 700;
+  transition: transform 160ms ease, filter 160ms ease;
+}
+
+.control:hover:not(:disabled) {
+  transform: translateY(-2px);
+  filter: saturate(1.15);
+}
+
+.control:disabled {
+  opacity: 0.4;
+}
+
+.control-start {
+  background: var(--accent-1);
+  color: #251c12;
+}
+
+.control-stop {
+  background: #f26f70;
+  color: #271113;
+}
+
+.control-save {
+  background: var(--accent-2);
+  color: #092224;
+}
+
+.animate-fade-in {
+  animation: fade-in 700ms ease both;
+}
+
+.stagger-1 {
+  animation: rise-in 500ms ease 100ms both;
+}
+
+.stagger-2 {
+  animation: rise-in 500ms ease 180ms both;
+}
+
+.stagger-3 {
+  animation: rise-in 500ms ease 260ms both;
+}
+
+.stagger-4 {
+  animation: rise-in 500ms ease 340ms both;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .panel {
+    padding: 1rem;
+  }
+
+  .control {
+    width: 100%;
+    text-align: center;
+  }
 }

@@ -20,6 +20,7 @@ export default function Home() {
     if (!videoBlob) {
       return "";
     }
+
     return URL.createObjectURL(videoBlob);
   }, [videoBlob]);
 
@@ -87,6 +88,7 @@ export default function Home() {
     if (!recorderRef.current || state !== "recording") {
       return;
     }
+
     recorderRef.current.stop();
   };
 
@@ -124,77 +126,87 @@ export default function Home() {
   };
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-4xl flex-col gap-6 px-6 py-12">
-      <h1 className="text-3xl font-bold tracking-tight">Video Recorder</h1>
-      <p className="text-slate-300">
-        Record from your camera and save the file to the project temp folder.
-      </p>
+    <main className="scene min-h-screen px-4 py-10 md:px-10 md:py-14">
+      <div className="grain" aria-hidden="true" />
+      <section className="mx-auto grid w-full max-w-6xl animate-fade-in grid-cols-1 gap-4 md:grid-cols-[1.2fr_0.8fr]">
+        <header className="panel panel-primary stagger-1">
+          <p className="eyebrow">Studio Capture</p>
+          <h1 className="headline">Tape Room</h1>
+          <p className="mt-3 max-w-2xl text-sm text-stone-300/90 md:text-base">
+            Record directly from camera and microphone, review the take, then
+            archive it into your project temp vault.
+          </p>
+        </header>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <section className="rounded-xl border border-slate-700 bg-slate-900/60 p-4">
-          <h2 className="mb-3 text-lg font-semibold">Live Camera</h2>
+        <aside className="panel panel-secondary stagger-2">
+          <p className="text-xs uppercase tracking-[0.35em] text-amber-300">
+            Session
+          </p>
+          <p className="mt-2 text-2xl font-semibold uppercase tracking-wider text-stone-100">
+            {state}
+          </p>
+          {savedPath ? (
+            <p className="mt-4 text-xs text-emerald-300">
+              Saved: <code>{savedPath}</code>
+            </p>
+          ) : null}
+          {error ? <p className="mt-4 text-xs text-rose-300">{error}</p> : null}
+        </aside>
+
+        <section className="panel panel-primary stagger-2">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="section-title">Live Feed</h2>
+            <span className="chip">Camera + Mic</span>
+          </div>
           <video
             ref={liveVideoRef}
             autoPlay
             muted
             playsInline
-            className="aspect-video w-full rounded-md bg-black"
+            className="video-frame"
           />
         </section>
 
-        <section className="rounded-xl border border-slate-700 bg-slate-900/60 p-4">
-          <h2 className="mb-3 text-lg font-semibold">Recorded Preview</h2>
+        <section className="panel panel-secondary stagger-3">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="section-title">Playback</h2>
+            <span className="chip">Latest Take</span>
+          </div>
           {previewUrl ? (
-            <video
-              src={previewUrl}
-              controls
-              className="aspect-video w-full rounded-md bg-black"
-            />
+            <video src={previewUrl} controls className="video-frame" />
           ) : (
-            <div className="flex aspect-video items-center justify-center rounded-md bg-slate-800 text-slate-400">
-              No recording yet
+            <div className="video-frame flex items-center justify-center text-sm uppercase tracking-[0.35em] text-stone-500">
+              Waiting For Recording
             </div>
           )}
         </section>
-      </div>
 
-      <div className="flex flex-wrap gap-3">
-        <button
-          onClick={startRecording}
-          disabled={state === "recording"}
-          className="rounded-md bg-emerald-500 px-4 py-2 font-semibold text-black disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          Start Recording
-        </button>
-        <button
-          onClick={stopRecording}
-          disabled={state !== "recording"}
-          className="rounded-md bg-rose-500 px-4 py-2 font-semibold text-black disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          Stop Recording
-        </button>
-        <button
-          onClick={uploadRecording}
-          disabled={!videoBlob || isUploading}
-          className="rounded-md bg-sky-500 px-4 py-2 font-semibold text-black disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {isUploading ? "Uploading..." : "Save to temp"}
-        </button>
-      </div>
-
-      <p className="text-sm text-slate-300">Status: {state}</p>
-
-      {savedPath ? (
-        <p className="rounded-md border border-emerald-700 bg-emerald-900/20 p-3 text-emerald-300">
-          Saved to: <code>{savedPath}</code>
-        </p>
-      ) : null}
-
-      {error ? (
-        <p className="rounded-md border border-rose-700 bg-rose-900/20 p-3 text-rose-300">
-          {error}
-        </p>
-      ) : null}
+        <section className="panel panel-primary stagger-4 md:col-span-2">
+          <div className="flex flex-wrap gap-3">
+            <button
+              onClick={startRecording}
+              disabled={state === "recording"}
+              className="control control-start"
+            >
+              Start Recording
+            </button>
+            <button
+              onClick={stopRecording}
+              disabled={state !== "recording"}
+              className="control control-stop"
+            >
+              Stop Recording
+            </button>
+            <button
+              onClick={uploadRecording}
+              disabled={!videoBlob || isUploading}
+              className="control control-save"
+            >
+              {isUploading ? "Saving..." : "Save to temp"}
+            </button>
+          </div>
+        </section>
+      </section>
     </main>
   );
 }
