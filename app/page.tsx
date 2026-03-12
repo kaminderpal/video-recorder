@@ -175,7 +175,41 @@ export default function Home() {
             <span className="chip">Camera + Mic</span>
           </div>
           <div className="relative">
-            <span className="status-badge">Session: {state}</span>
+            <div className="video-overlay">
+              <span className="status-badge">Session: {state}</span>
+              <div className="overlay-controls">
+                <button
+                  onClick={startRecording}
+                  disabled={state === "recording"}
+                  className="control control-start"
+                >
+                  Start
+                </button>
+                <button
+                  onClick={stopRecording}
+                  disabled={state !== "recording"}
+                  className="control control-stop"
+                >
+                  Stop
+                </button>
+                <button
+                  onClick={uploadRecording}
+                  disabled={!videoBlob || isUploading}
+                  className="control control-save"
+                >
+                  {isUploading ? "Saving..." : "Save"}
+                </button>
+                <button
+                  onClick={deleteRecording}
+                  disabled={
+                    (!videoBlob && !savedPath) || state === "recording" || isDeleting
+                  }
+                  className="control control-delete"
+                >
+                  {isDeleting ? "Deleting..." : "Delete"}
+                </button>
+              </div>
+            </div>
             <video
               ref={liveVideoRef}
               autoPlay
@@ -202,44 +236,16 @@ export default function Home() {
           </section>
         ) : null}
 
-        <section className="panel panel-primary stagger-4">
-          <div className="flex flex-wrap gap-3">
-            <button
-              onClick={startRecording}
-              disabled={state === "recording"}
-              className="control control-start"
-            >
-              Start Recording
-            </button>
-            <button
-              onClick={stopRecording}
-              disabled={state !== "recording"}
-              className="control control-stop"
-            >
-              Stop Recording
-            </button>
-            <button
-              onClick={uploadRecording}
-              disabled={!videoBlob || isUploading}
-              className="control control-save"
-            >
-              {isUploading ? "Saving..." : "Save to temp"}
-            </button>
-            <button
-              onClick={deleteRecording}
-              disabled={(!videoBlob && !savedPath) || state === "recording" || isDeleting}
-              className="control control-delete"
-            >
-              {isDeleting ? "Deleting..." : "Delete Recording"}
-            </button>
-          </div>
-          {savedPath ? (
-            <p className="mt-4 break-all text-xs text-emerald-300">
-              Saved: <code>{savedPath}</code>
-            </p>
-          ) : null}
-          {error ? <p className="mt-4 text-xs text-rose-300">{error}</p> : null}
-        </section>
+        {savedPath || error ? (
+          <section className="stagger-4 px-1">
+            {savedPath ? (
+              <p className="break-all text-xs text-emerald-300">
+                Saved: <code>{savedPath}</code>
+              </p>
+            ) : null}
+            {error ? <p className="mt-2 text-xs text-rose-300">{error}</p> : null}
+          </section>
+        ) : null}
       </section>
     </main>
   );
