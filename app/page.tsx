@@ -215,7 +215,7 @@ export default function Home() {
               autoPlay
               muted
               playsInline
-              className="video-frame"
+              className="video-frame video-live"
             />
           </div>
         </section>

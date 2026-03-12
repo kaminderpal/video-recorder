@@ -97,6 +97,11 @@ body {
   border-radius: 0.85rem;
   background: #030303;
   border: 1px solid #ffffff1f;
+  object-fit: cover;
+}
+
+.video-live {
+  object-fit: cover;
 }
 
 .chip {
