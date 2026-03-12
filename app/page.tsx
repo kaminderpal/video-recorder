@@ -8,6 +8,7 @@ export default function Home() {
   const [state, setState] = useState<RecorderState>("idle");
   const [error, setError] = useState<string>("");
   const [isUploading, setIsUploading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [savedPath, setSavedPath] = useState<string>("");
   const [videoBlob, setVideoBlob] = useState<Blob | null>(null);
 
@@ -125,10 +126,40 @@ export default function Home() {
     }
   };
 
+  const deleteRecording = async () => {
+    setError("");
+
+    try {
+      if (savedPath) {
+        setIsDeleting(true);
+        const response = await fetch("/api/upload", {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ path: savedPath })
+        });
+
+        if (!response.ok) {
+          throw new Error("Delete failed.");
+        }
+      }
+
+      setVideoBlob(null);
+      setSavedPath("");
+      setState("idle");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Delete failed.";
+      setError(message);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <main className="scene min-h-screen px-4 py-10 md:px-10 md:py-14">
       <div className="grain" aria-hidden="true" />
-      <section className="mx-auto grid w-full max-w-6xl animate-fade-in grid-cols-1 gap-4 md:grid-cols-[1.2fr_0.8fr]">
+      <section className="mx-auto grid w-full max-w-6xl animate-fade-in grid-cols-1 gap-4">
         <header className="panel panel-primary stagger-1">
           <p className="eyebrow">Studio Capture</p>
           <h1 className="headline">Tape Room</h1>
@@ -138,50 +169,40 @@ export default function Home() {
           </p>
         </header>
 
-        <aside className="panel panel-secondary stagger-2">
-          <p className="text-xs uppercase tracking-[0.35em] text-amber-300">
-            Session
-          </p>
-          <p className="mt-2 text-2xl font-semibold uppercase tracking-wider text-stone-100">
-            {state}
-          </p>
-          {savedPath ? (
-            <p className="mt-4 text-xs text-emerald-300">
-              Saved: <code>{savedPath}</code>
-            </p>
-          ) : null}
-          {error ? <p className="mt-4 text-xs text-rose-300">{error}</p> : null}
-        </aside>
-
         <section className="panel panel-primary stagger-2">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="section-title">Live Feed</h2>
             <span className="chip">Camera + Mic</span>
           </div>
-          <video
-            ref={liveVideoRef}
-            autoPlay
-            muted
-            playsInline
-            className="video-frame"
-          />
-        </section>
-
-        <section className="panel panel-secondary stagger-3">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="section-title">Playback</h2>
-            <span className="chip">Latest Take</span>
+          <div className="relative">
+            <span className="status-badge">Session: {state}</span>
+            <video
+              ref={liveVideoRef}
+              autoPlay
+              muted
+              playsInline
+              className="video-frame"
+            />
           </div>
-          {previewUrl ? (
-            <video src={previewUrl} controls className="video-frame" />
-          ) : (
-            <div className="video-frame flex items-center justify-center text-sm uppercase tracking-[0.35em] text-stone-500">
-              Waiting For Recording
-            </div>
-          )}
         </section>
 
-        <section className="panel panel-primary stagger-4 md:col-span-2">
+        {state === "stopped" ? (
+          <section className="panel panel-secondary stagger-3">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="section-title">Playback</h2>
+              <span className="chip">Latest Take</span>
+            </div>
+            {previewUrl ? (
+              <video src={previewUrl} controls autoPlay className="video-frame" />
+            ) : (
+              <div className="video-frame flex items-center justify-center text-sm uppercase tracking-[0.35em] text-stone-500">
+                Waiting For Recording
+              </div>
+            )}
+          </section>
+        ) : null}
+
+        <section className="panel panel-primary stagger-4">
           <div className="flex flex-wrap gap-3">
             <button
               onClick={startRecording}
@@ -204,7 +225,20 @@ export default function Home() {
             >
               {isUploading ? "Saving..." : "Save to temp"}
             </button>
+            <button
+              onClick={deleteRecording}
+              disabled={(!videoBlob && !savedPath) || state === "recording" || isDeleting}
+              className="control control-delete"
+            >
+              {isDeleting ? "Deleting..." : "Delete Recording"}
+            </button>
           </div>
+          {savedPath ? (
+            <p className="mt-4 break-all text-xs text-emerald-300">
+              Saved: <code>{savedPath}</code>
+            </p>
+          ) : null}
+          {error ? <p className="mt-4 text-xs text-rose-300">{error}</p> : null}
         </section>
       </section>
     </main>

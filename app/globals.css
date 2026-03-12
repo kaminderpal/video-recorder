@@ -107,6 +107,22 @@ body {
   color: var(--muted);
 }
 
+.status-badge {
+  position: absolute;
+  left: 0.6rem;
+  top: 0.6rem;
+  z-index: 2;
+  border: 1px solid #ffffff2f;
+  border-radius: 999px;
+  padding: 0.28rem 0.55rem;
+  background: #050505bf;
+  font-family: "Courier New", monospace;
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: #f7f2ec;
+}
+
 .control {
   border: 1px solid #000;
   border-radius: 999px;
@@ -141,6 +157,11 @@ body {
 .control-save {
   background: var(--accent-2);
   color: #092224;
+}
+
+.control-delete {
+  background: #f1e8dc;
+  color: #281911;
 }
 
 .animate-fade-in {

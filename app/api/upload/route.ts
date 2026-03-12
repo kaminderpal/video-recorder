@@ -1,6 +1,8 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { NextResponse } from "next/server";
+
+const tempDir = path.join(process.cwd(), "temp");
 
 export async function POST(request: Request) {
   try {
@@ -14,7 +16,6 @@ export async function POST(request: Request) {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    const tempDir = path.join(process.cwd(), "temp");
     await mkdir(tempDir, { recursive: true });
 
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
@@ -31,6 +32,41 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         error: "Failed to save video",
+        details: error instanceof Error ? error.message : "Unknown error"
+      },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const body = (await request.json()) as { path?: string };
+    const relativePath = body.path;
+
+    if (!relativePath) {
+      return NextResponse.json({ error: "File path is required." }, { status: 400 });
+    }
+
+    if (!relativePath.startsWith("temp/")) {
+      return NextResponse.json({ error: "Invalid file path." }, { status: 400 });
+    }
+
+    const filename = relativePath.replace(/^temp\//, "");
+    const fullPath = path.join(tempDir, filename);
+
+    // Prevent path traversal and enforce writes only inside temp.
+    if (!fullPath.startsWith(`${tempDir}${path.sep}`)) {
+      return NextResponse.json({ error: "Invalid file path." }, { status: 400 });
+    }
+
+    await unlink(fullPath);
+
+    return NextResponse.json({ message: "Video deleted" });
+  } catch (error) {
+    return NextResponse.json(
+      {
+        error: "Failed to delete video",
         details: error instanceof Error ? error.message : "Unknown error"
       },
       { status: 500 }
